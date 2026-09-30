@@ -12,9 +12,23 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            FilledButton.icon(icon: const Icon(Icons.devices), label: const Text('Каталог товаров'), onPressed: () => context.go('/products')),
+            FilledButton.icon(
+              icon: const Icon(Icons.devices), 
+              label: const Text('Каталог товаров'), 
+              onPressed: () => context.go('/products'),
+            ),
             const SizedBox(height: 16),
-            FilledButton.icon(icon: const Icon(Icons.business), label: const Text('Производители'), onPressed: () => context.go('/manufacturers')),
+            FilledButton.icon(
+              icon: const Icon(Icons.business), 
+              label: const Text('Производители'), 
+              onPressed: () => context.go('/manufacturers'),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              icon: const Icon(Icons.people), 
+              label: const Text('Покупатели'), 
+              onPressed: () => context.go('/customers'),
+            ),
           ],
         ),
       ),

@@ -44,7 +44,7 @@ class EntityTable<T> extends StatelessWidget {
               sortAscending: sortAscending,
               columns: columns.map((c) => DataColumn(
                 label: Text(c.label),
-                onSort: c.sortField != null ? (_, __) => onSort?.call(c.sortField!) : null,
+                onSort: c.sortField != null ? (col, asc) => onSort?.call(c.sortField!) : null,
               )).toList()..add(const DataColumn(label: Text('Действия'))),
               rows: items.map((item) {
                 final isDel = isDeletedOf(item);

@@ -38,9 +38,20 @@ class ListNotifier<T, Q> extends ChangeNotifier {
   }
 
   Future<void> deleteSelected(Q currentQuery, {bool hard = false}) async {
-    await _repository.deleteMany(_selected.toList(), hard: hard);
-    _selected.clear();
-    await load(currentQuery);
+    try {
+      await _repository.deleteMany(_selected.toList(), hard: hard);
+      _selected.clear();
+      await load(currentQuery);
+    } catch (e) {
+      String msg = e.toString();      
+      if (msg.contains('Instance of')) {
+        try { msg = 'ValidationException: ${(e as dynamic).message}'; } catch (_) {}
+      }
+      
+      _error = msg;
+      _status = LoadStatus.error;
+      notifyListeners();
+    }
   }
 
   Future<void> restore(int id, Q currentQuery) async {

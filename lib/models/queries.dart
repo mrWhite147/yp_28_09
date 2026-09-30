@@ -57,5 +57,22 @@ class ManufacturerQuery extends BaseQuery {
     if (search.isNotEmpty) 'search': search, if (sortField != 'name') 'sort': sortField,
     if (!sortAscending) 'asc': 'false', if (page > 1) 'page': page.toString(),
     if (size != 10) 'size': size.toString(), if (includeDeleted) 'del': 'true',
+  }; 
+}
+
+class CustomerQuery extends BaseQuery {
+  const CustomerQuery({super.search, super.sortField = 'fullName', super.sortAscending, super.page, super.size, super.includeDeleted});
+
+  factory CustomerQuery.fromMap(Map<String, String> map) => CustomerQuery(
+    search: map['search'] ?? '', sortField: map['sort'] ?? 'fullName',
+    sortAscending: map['asc'] != 'false', page: int.tryParse(map['page'] ?? '1') ?? 1,
+    size: int.tryParse(map['size'] ?? '10') ?? 10, includeDeleted: map['del'] == 'true',
+  );
+  
+  @override
+  Map<String, String> toMap() => {
+    if (search.isNotEmpty) 'search': search, if (sortField != 'fullName') 'sort': sortField,
+    if (!sortAscending) 'asc': 'false', if (page > 1) 'page': page.toString(),
+    if (size != 10) 'size': size.toString(), if (includeDeleted) 'del': 'true',
   };
 }

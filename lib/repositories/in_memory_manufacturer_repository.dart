@@ -2,25 +2,16 @@ import '../models/models.dart';
 import '../models/page_result.dart';
 import '../models/queries.dart';
 import 'repository_interfaces.dart';
-
-final List<Manufacturer> seedManufacturers = [
-  const Manufacturer(id: 1, name: 'Samsung', foundedYear: 1938, country: 'Южная Корея'),
-  const Manufacturer(id: 2, name: 'Apple', foundedYear: 1976, country: 'США'),
-  const Manufacturer(id: 3, name: 'Sony', foundedYear: 1946, country: 'Япония'),
-  const Manufacturer(id: 4, name: 'LG', foundedYear: 1947, country: 'Южная Корея'),
-  const Manufacturer(id: 5, name: 'Asus', foundedYear: 1989, country: 'Тайвань'),
-  const Manufacturer(id: 6, name: 'Lenovo', foundedYear: 1984, country: 'Китай'),
-  const Manufacturer(id: 7, name: 'HP', foundedYear: 1939, country: 'США'),
-  const Manufacturer(id: 8, name: 'Dell', foundedYear: 1984, country: 'США'),
-];
+import 'persistent_store_repository.dart';
 
 class InMemoryManufacturerRepository implements Repository<Manufacturer, ManufacturerQuery> {
-  final List<Manufacturer> _manufacturers = [...seedManufacturers];
+  final PersistentStore store;
+  InMemoryManufacturerRepository(this.store);
 
   @override
   Future<PageResult<Manufacturer>> find(ManufacturerQuery q) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    var rows = _manufacturers.where((m) => q.includeDeleted || !m.isDeleted).toList();
+    var rows = store.manufacturers.where((m) => q.includeDeleted || !m.isDeleted).toList();
 
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
@@ -46,21 +37,26 @@ class InMemoryManufacturerRepository implements Repository<Manufacturer, Manufac
 
   @override
   Future<void> restore(int id) async {
-    final i = _manufacturers.indexWhere((m) => m.id == id);
-    if (i != -1) _manufacturers[i] = _manufacturers[i].copyWith(clearDeletedAt: true);
+    final i = store.manufacturers.indexWhere((m) => m.id == id);
+    if (i != -1) store.manufacturers[i] = store.manufacturers[i].copyWith(clearDeletedAt: true);    
+    await store.saveManufacturers();
   }
 
   @override
   Future<int> deleteMany(List<int> ids, {bool hard = false}) async {
     var count = 0;
-    for (final id in ids) {
-      if (hard) _manufacturers.removeWhere((m) => m.id == id);
-      else {
-        final i = _manufacturers.indexWhere((m) => m.id == id && !m.isDeleted);
-        if (i != -1) _manufacturers[i] = _manufacturers[i].copyWith(deletedAt: DateTime.now());
+    for (final id in ids) {      
+      store.checkManufacturerDeletable(id); 
+      
+      if (hard) {
+        store.manufacturers.removeWhere((m) => m.id == id);
+      } else {
+        final i = store.manufacturers.indexWhere((m) => m.id == id && !m.isDeleted);
+        if (i != -1) store.manufacturers[i] = store.manufacturers[i].copyWith(deletedAt: DateTime.now());
       }
       count++;
-    }
+    }    
+    await store.saveManufacturers();
     return count;
   }
 }
