@@ -11,7 +11,7 @@ import '../widgets/dynamic_form.dart';
 
 class CustomerFormScreen extends StatefulWidget {
   final int? id;
-  const CustomerFormScreen({super.key, this.id}); // УДАЛЕНО: required this.store
+  const CustomerFormScreen({super.key, this.id});
 
   @override
   State<CustomerFormScreen> createState() => _CustomerFormScreenState();
