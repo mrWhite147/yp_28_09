@@ -7,7 +7,7 @@ class FormFieldSpec {
   final String label;
   final FieldType type;
   final dynamic initialValue;
-  final List<dynamic>? options; // Для dropdown и multiSelect
+  final List<dynamic>? options;
   final String Function(dynamic)? optionLabelBuilder;
   final String? Function(dynamic)? validator;
   final void Function(dynamic) onSaved;
@@ -142,7 +142,7 @@ class _DynamicFormState extends State<DynamicForm> {
                     onSelected: (val) {
                       final next = [...field.value!];
                       val ? next.add(o.id) : next.remove(o.id);
-                      field.didChange(next); // Уведомляем форму
+                      field.didChange(next);
                       _markDirty();
                     },
                   );

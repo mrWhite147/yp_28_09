@@ -22,7 +22,7 @@ class Product {
     List<int>? categoryIds, List<int>? supplierIds, DateTime? deletedAt, bool clearDeletedAt = false,
   }) {
     return Product(
-      id: id ?? this.id, // Добавили возможность менять ID
+      id: id ?? this.id,  
       name: name ?? this.name, sku: sku ?? this.sku, price: price ?? this.price,
       stockCount: stockCount ?? this.stockCount, manufacturerId: manufacturerId ?? this.manufacturerId,
       categoryIds: categoryIds ?? this.categoryIds, supplierIds: supplierIds ?? this.supplierIds,

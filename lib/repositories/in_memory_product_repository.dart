@@ -12,7 +12,6 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
   Future<PageResult<Product>> find(ProductQuery q) async {
     await Future.delayed(const Duration(milliseconds: 200));
     
-    // ТЕПЕРЬ МЫ БЕРЕМ ДАННЫЕ ИЗ ХРАНИЛИЩА!
     var rows = store.products.where((p) => q.includeDeleted || !p.isDeleted).toList();
 
     if (q.search.trim().isNotEmpty) {
@@ -45,7 +44,7 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
   Future<void> restore(int id) async {
     final i = store.products.indexWhere((p) => p.id == id);
     if (i != -1) store.products[i] = store.products[i].copyWith(clearDeletedAt: true);
-    await store.saveProducts(); // Сохраняем
+    await store.saveProducts();
   }
 
   @override
@@ -63,7 +62,7 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
         }
       }
     }
-    await store.saveProducts(); // Сохраняем
+    await store.saveProducts();
     return count;
   }
 }

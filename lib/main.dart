@@ -1,37 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:dio/dio.dart';
 
-import 'router.dart';
-import 'repositories/persistent_store_repository.dart';
-import 'repositories/repository_interfaces.dart';
-import 'repositories/in_memory_product_repository.dart';
-import 'repositories/in_memory_manufacturer_repository.dart';
-import 'repositories/in_memory_customer_repository.dart';
+import 'core/api_client.dart';
+import 'repositories/api_repository.dart';
 import 'models/models.dart';
 import 'models/queries.dart';
+import 'router.dart';
+
+// Кэш справочников
+class DictionaryCache {
+  final ApiRepository<Manufacturer> manRepo;
+  List<Manufacturer> manufacturers = [];
+
+  DictionaryCache(this.manRepo);
+
+  Future<void> loadOnce() async {
+    if (manufacturers.isEmpty) {
+      manufacturers = (await manRepo.find(const ManufacturerQuery(size: 100))).items;
+    }
+  }
+}
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();  
+  WidgetsFlutterBinding.ensureInitialized();
   usePathUrlStrategy(); 
-  final prefs = await SharedPreferences.getInstance();  
-  final store = PersistentStore(prefs);
+
+  final dio = buildDio();
 
   runApp(
     MultiProvider(
       providers: [
-        Provider<PersistentStore>.value(value: store),        
-        Provider<Repository<Product, ProductQuery>>(
-          create: (context) => InMemoryProductRepository(context.read<PersistentStore>()), 
-        ),
+        Provider<Dio>.value(value: dio),
         
-        Provider<Repository<Manufacturer, ManufacturerQuery>>(
-          create: (context) => InMemoryManufacturerRepository(context.read<PersistentStore>()),
+        // Репозитории API для Магазина
+        ProxyProvider<Dio, ApiRepository<Product>>(
+          update: (context, d, prev) => ApiRepository(d, '/products', Product.fromJson, (p) => p.toJson()),
         ),
-        
-        Provider<Repository<Customer, CustomerQuery>>(
-          create: (context) => InMemoryCustomerRepository(context.read<PersistentStore>()),
+        ProxyProvider<Dio, ApiRepository<Manufacturer>>(
+          update: (context, d, prev) => ApiRepository(d, '/manufacturers', Manufacturer.fromJson, (m) => m.toJson()),
+        ),
+        ProxyProvider<Dio, ApiRepository<Customer>>(
+          update: (context, d, prev) => ApiRepository(d, '/customers', Customer.fromJson, (c) => c.toJson()),
+        ),
+
+        // Кэш справочников
+        ProxyProvider<ApiRepository<Manufacturer>, DictionaryCache>(
+          update: (context, manRepo, prev) => DictionaryCache(manRepo)..loadOnce(),
         ),
       ],
       child: const StoreApp(),
@@ -45,8 +61,8 @@ class StoreApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Магазин Электроники',
-      debugShowCheckedModeBanner: false, // Убирает красную плашку "DEBUG"
+      title: 'Магазин Электроники API',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
