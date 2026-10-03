@@ -9,7 +9,7 @@ import 'screens/customer_form_screen.dart';
 import 'models/models.dart';
 import 'models/queries.dart';
 import 'state/list_notifier.dart';
-import 'repositories/persistent_store_repository.dart';
+
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
@@ -28,6 +28,7 @@ final appRouter = GoRouter(
         );
       },
     ),
+    
     GoRoute(
       path: '/manufacturers',
       builder: (context, state) {
@@ -39,11 +40,10 @@ final appRouter = GoRouter(
       },
     ),
 
+    // --- ФОРМЫ (без PersistentStore, так как теперь данные идут через API) ---
     GoRoute(
       path: '/products/new',
-      builder: (context, state) => ProductFormScreen(
-        store: context.read<PersistentStore>(),
-      ),
+      builder: (context, state) => const ProductFormScreen(),
     ),
     GoRoute(
       path: '/products/:id/edit',
@@ -51,11 +51,11 @@ final appRouter = GoRouter(
         final idParam = state.pathParameters['id'] ?? '';
         return ProductFormScreen(
           id: int.tryParse(idParam),
-          store: context.read<PersistentStore>(),
         );
       },
     ),
-GoRoute(
+
+    GoRoute(
       path: '/customers',
       builder: (context, state) {
         final query = CustomerQuery.fromMap(state.uri.queryParameters);
@@ -65,11 +65,10 @@ GoRoute(
         );
       },
     ),
+    
     GoRoute(
       path: '/customers/new',
-      builder: (context, state) => CustomerFormScreen(
-        store: context.read<PersistentStore>(),
-      ),
+      builder: (context, state) => const CustomerFormScreen(),
     ),
     GoRoute(
       path: '/customers/:id/edit',
@@ -77,7 +76,6 @@ GoRoute(
         final idParam = state.pathParameters['id'] ?? '';
         return CustomerFormScreen(
           id: int.tryParse(idParam),
-          store: context.read<PersistentStore>(),
         );
       },
     ),
