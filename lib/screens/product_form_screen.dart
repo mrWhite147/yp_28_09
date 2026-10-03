@@ -39,7 +39,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
 
     try {
-      // ИСПРАВЛЕНИЕ: Добавлен второй тип ProductQuery
       final repo = context.read<ApiRepository<Product, ProductQuery>>();
       final p = await repo.findById(widget.id!);
       setState(() {
@@ -66,10 +65,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       if (mounted) context.pop();
     } on ValidationException catch (e) {
       setState(() => _serverErrors = e.errors);
-      rethrow;
+      throw Exception('Validation failed');
     } on ApiException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
-      rethrow;
+      throw Exception('API failed');
     }
   }
 

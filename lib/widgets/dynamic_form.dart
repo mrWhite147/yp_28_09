@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 enum FieldType { text, number, dropdown, multiSelect }
 
 class FormFieldSpec {
-  final String name;
+  final String name; 
   final String label;
   final FieldType type;
   final dynamic initialValue;
-  final List<dynamic>? options;
+  final List<dynamic>? options; 
   final String Function(dynamic)? optionLabelBuilder;
   final String? Function(dynamic)? validator;
   final void Function(dynamic) onSaved;
@@ -47,6 +47,8 @@ class _DynamicFormState extends State<DynamicForm> {
     try {
       await widget.onSave();
       setState(() => _isDirty = false);
+    } catch (e) {
+      _formKey.currentState!.validate();
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -70,14 +72,12 @@ class _DynamicFormState extends State<DynamicForm> {
 
   @override
   Widget build(BuildContext context) {
-  return PopScope(
+    return PopScope(
       canPop: !_isDirty,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         final shouldPop = await _onWillPop();
-        if (shouldPop && context.mounted) {
-          Navigator.pop(context, result);
-        }
+        if (shouldPop && context.mounted) Navigator.pop(context, result);
       },
       child: Form(
         key: _formKey,
@@ -101,37 +101,41 @@ class _DynamicFormState extends State<DynamicForm> {
   }
 
   Widget _buildField(FormFieldSpec spec) {
-    final serverError = widget.serverErrors?[spec.name];
+    String? combinedValidator(dynamic value) {
+      final clientError = spec.validator?.call(value);
+      if (clientError != null) return clientError;
+      return widget.serverErrors?[spec.name];
+    }
 
     switch (spec.type) {
       case FieldType.text:
       case FieldType.number:
         return TextFormField(
           initialValue: spec.initialValue?.toString(),
-          decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder(), errorText: serverError),
+          decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder()),
           keyboardType: spec.type == FieldType.number ? TextInputType.number : TextInputType.text,
-          validator: (v) => spec.validator?.call(v) ?? (serverError != null ? '' : null),
+          validator: combinedValidator, // Используем комбинированный валидатор
           onSaved: spec.onSaved,
         );
 
-      case FieldType.dropdown: 
+      case FieldType.dropdown:
         return DropdownButtonFormField<dynamic>(
           initialValue: spec.initialValue == 0 ? null : spec.initialValue,
-          decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder(), errorText: serverError),
+          decoration: const InputDecoration(labelText: 'Производитель', border: OutlineInputBorder()),
           items: spec.options!.map((o) => DropdownMenuItem(value: o.id, child: Text(spec.optionLabelBuilder!(o)))).toList(),
-          validator: (v) => spec.validator?.call(v),
+          validator: combinedValidator,
           onSaved: spec.onSaved,
-          onChanged: (_) {}, 
+          onChanged: (_) => _markDirty(), 
         );
 
       case FieldType.multiSelect:
         return FormField<List<int>>(
           initialValue: (spec.initialValue as List<int>?) ?? [],
-          validator: (v) => spec.validator?.call(v) ?? (serverError != null ? '' : null),
+          validator: combinedValidator,
           onSaved: (v) => spec.onSaved(v),
           builder: (field) {
             return InputDecorator(
-              decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder(), errorText: field.errorText ?? serverError),
+              decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder(), errorText: field.errorText),
               child: Wrap(
                 spacing: 8, runSpacing: 8,
                 children: spec.options!.map((o) {
@@ -142,7 +146,7 @@ class _DynamicFormState extends State<DynamicForm> {
                     onSelected: (val) {
                       final next = [...field.value!];
                       val ? next.add(o.id) : next.remove(o.id);
-                      field.didChange(next);
+                      field.didChange(next); 
                       _markDirty();
                     },
                   );
