@@ -48,7 +48,9 @@ class _DynamicFormState extends State<DynamicForm> {
       await widget.onSave();
       setState(() => _isDirty = false);
     } catch (e) {
-      _formKey.currentState!.validate();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _formKey.currentState?.validate();
+      });
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -101,10 +103,12 @@ class _DynamicFormState extends State<DynamicForm> {
   }
 
   Widget _buildField(FormFieldSpec spec) {
+    final serverError = widget.serverErrors?[spec.name];
+
     String? combinedValidator(dynamic value) {
       final clientError = spec.validator?.call(value);
       if (clientError != null) return clientError;
-      return widget.serverErrors?[spec.name];
+      return serverError;
     }
 
     switch (spec.type) {
@@ -112,16 +116,25 @@ class _DynamicFormState extends State<DynamicForm> {
       case FieldType.number:
         return TextFormField(
           initialValue: spec.initialValue?.toString(),
-          decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder()),
+          decoration: InputDecoration(
+            labelText: spec.label, 
+            border: const OutlineInputBorder(),
+            errorText: serverError, // 2. ВАЖНО: Рисуем красный текст ошибки!
+          ),
           keyboardType: spec.type == FieldType.number ? TextInputType.number : TextInputType.text,
-          validator: combinedValidator, // Используем комбинированный валидатор
+          validator: combinedValidator,
           onSaved: spec.onSaved,
+          onChanged: (_) => _markDirty(),
         );
 
       case FieldType.dropdown:
         return DropdownButtonFormField<dynamic>(
           initialValue: spec.initialValue == 0 ? null : spec.initialValue,
-          decoration: const InputDecoration(labelText: 'Производитель', border: OutlineInputBorder()),
+          decoration: InputDecoration(
+            labelText: spec.label, 
+            border: const OutlineInputBorder(),
+            errorText: serverError,
+          ),
           items: spec.options!.map((o) => DropdownMenuItem(value: o.id, child: Text(spec.optionLabelBuilder!(o)))).toList(),
           validator: combinedValidator,
           onSaved: spec.onSaved,
@@ -135,7 +148,11 @@ class _DynamicFormState extends State<DynamicForm> {
           onSaved: (v) => spec.onSaved(v),
           builder: (field) {
             return InputDecorator(
-              decoration: InputDecoration(labelText: spec.label, border: const OutlineInputBorder(), errorText: field.errorText),
+              decoration: InputDecoration(
+                labelText: spec.label, 
+                border: const OutlineInputBorder(), 
+                errorText: field.errorText ?? serverError,
+              ),
               child: Wrap(
                 spacing: 8, runSpacing: 8,
                 children: spec.options!.map((o) {

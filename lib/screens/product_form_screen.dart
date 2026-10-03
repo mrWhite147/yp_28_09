@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/models.dart';
 import '../models/queries.dart';
 import '../repositories/api_repository.dart';
+import '../repositories/repository_interfaces.dart';
 import '../core/api_exceptions.dart';
 import '../utils/validators.dart';
 import '../widgets/dynamic_form.dart';
@@ -39,7 +40,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
     }
 
     try {
-      final repo = context.read<ApiRepository<Product, ProductQuery>>();
+      final repo = context.read<Repository<Product, ProductQuery>>() as ApiRepository<Product, ProductQuery>;
       final p = await repo.findById(widget.id!);
       setState(() {
         _product = p;
@@ -47,28 +48,37 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
-        context.pop();
+        showDialog(context: context, builder: (_) => AlertDialog(title: const Text('Ошибка загрузки'), content: Text(e.toString())));
       }
     }
   }
 
   Future<void> _save() async {
-    setState(() => _serverErrors = {});
+    setState(() => _serverErrors = {}); 
     try {
-      final repo = context.read<ApiRepository<Product, ProductQuery>>();
+      final repo = context.read<Repository<Product, ProductQuery>>() as ApiRepository<Product, ProductQuery>;
       if (widget.id == null) {
         await repo.create(_product!);
       } else {
         await repo.update(widget.id!, _product!);
       }
-      if (mounted) context.pop();
+      if (mounted) context.pop(); 
+      
     } on ValidationException catch (e) {
       setState(() => _serverErrors = e.errors);
-      throw Exception('Validation failed');
-    } on ApiException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
-      throw Exception('API failed');
+      throw Exception('Validation failed'); 
+    } catch (e, stacktrace) {
+      if (mounted) {
+        showDialog(
+          context: context, 
+          builder: (_) => AlertDialog(
+            title: const Text('Критическая системная ошибка'), 
+            content: SingleChildScrollView(child: Text('$e\n\n$stacktrace')),
+            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('ОК'))],
+          )
+        );
+      }
+      throw Exception('System Error');
     }
   }
 

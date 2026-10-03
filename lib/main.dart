@@ -11,7 +11,7 @@ import 'models/queries.dart';
 import 'router.dart';
 
 // Кэш справочников
-class DictionaryCache {
+class DictionaryCache extends ChangeNotifier {
   final Repository<Manufacturer, ManufacturerQuery> manRepo;
   List<Manufacturer> manufacturers = [];
 
@@ -19,7 +19,9 @@ class DictionaryCache {
 
   Future<void> loadOnce() async {
     if (manufacturers.isEmpty) {
-      manufacturers = (await manRepo.find(const ManufacturerQuery(size: 100))).items;
+      final result = await manRepo.find(const ManufacturerQuery(size: 100));
+      manufacturers = result.items;
+      notifyListeners();
     }
   }
 }
@@ -45,8 +47,9 @@ void main() async {
         ),
 
         // Кэш справочников
-        ProxyProvider<Repository<Manufacturer, ManufacturerQuery>, DictionaryCache>(
-          update: (context, manRepo, prev) => DictionaryCache(manRepo)..loadOnce(),
+        ChangeNotifierProxyProvider<Repository<Manufacturer, ManufacturerQuery>, DictionaryCache>(
+          create: (context) => DictionaryCache(context.read<Repository<Manufacturer, ManufacturerQuery>>()),
+          update: (context, manRepo, prev) => (prev ?? DictionaryCache(manRepo))..loadOnce(),
         ),
       ],
       child: const StoreApp(),
