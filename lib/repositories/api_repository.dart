@@ -2,8 +2,9 @@ import 'package:dio/dio.dart';
 import '../core/api_exceptions.dart';
 import '../models/page_result.dart';
 import '../models/queries.dart';
+import 'repository_interfaces.dart';
 
-class ApiRepository<T> {
+class ApiRepository<T, Q extends BaseQuery> implements Repository<T, Q> {
   final Dio _dio;
   final String path;
   final T Function(Map<String, dynamic>) fromJson;
@@ -13,7 +14,8 @@ class ApiRepository<T> {
 
   ApiRepository(this._dio, this.path, this.fromJson, this.toJson);
 
-  Future<PageResult<T>> find(BaseQuery q) async {
+  @override
+  Future<PageResult<T>> find(Q q) async {
     _cancelToken?.cancel('Новый запрос перекрыл старый');
     _cancelToken = CancelToken();
 
@@ -26,6 +28,15 @@ class ApiRepository<T> {
       );
     });
   }
+
+  @override
+  Future<void> restore(int id) => guard(() => _dio.post('$path/$id/restore'));
+
+  @override
+  Future<int> deleteMany(List<int> ids, {bool hard = false}) => guard(() async {
+    final res = await _dio.post('$path/bulk-delete', data: {'ids': ids});
+    return res.data['deleted'] ?? 0;
+  });
 
   Future<T> findById(int id) => guard(() async {
     final res = await _dio.get('$path/$id');
@@ -40,14 +51,5 @@ class ApiRepository<T> {
   Future<T> update(int id, T item) => guard(() async {
     final res = await _dio.put('$path/$id', data: toJson(item));
     return fromJson(res.data);
-  });
-
-  Future<void> softDelete(int id) => guard(() => _dio.delete('$path/$id'));
-  Future<void> hardDelete(int id) => guard(() => _dio.delete('$path/$id', queryParameters: {'hard': true}));
-  Future<void> restore(int id) => guard(() => _dio.post('$path/$id/restore'));
-
-  Future<int> deleteMany(List<int> ids) => guard(() async {
-    final res = await _dio.post('$path/bulk-delete', data: {'ids': ids});
-    return res.data['deleted'] ?? 0;
   });
 }

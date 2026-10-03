@@ -5,13 +5,14 @@ import 'package:dio/dio.dart';
 
 import 'core/api_client.dart';
 import 'repositories/api_repository.dart';
+import 'repositories/repository_interfaces.dart';
 import 'models/models.dart';
 import 'models/queries.dart';
 import 'router.dart';
 
 // Кэш справочников
 class DictionaryCache {
-  final ApiRepository<Manufacturer> manRepo;
+  final Repository<Manufacturer, ManufacturerQuery> manRepo;
   List<Manufacturer> manufacturers = [];
 
   DictionaryCache(this.manRepo);
@@ -32,21 +33,19 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        Provider<Dio>.value(value: dio),
-        
-        // Репозитории API для Магазина
-        ProxyProvider<Dio, ApiRepository<Product>>(
-          update: (context, d, prev) => ApiRepository(d, '/products', Product.fromJson, (p) => p.toJson()),
+        Provider<Dio>.value(value: dio),        
+        ProxyProvider<Dio, Repository<Product, ProductQuery>>(
+          update: (context, d, prev) => ApiRepository<Product, ProductQuery>(d, '/products', Product.fromJson, (p) => p.toJson()),
         ),
-        ProxyProvider<Dio, ApiRepository<Manufacturer>>(
-          update: (context, d, prev) => ApiRepository(d, '/manufacturers', Manufacturer.fromJson, (m) => m.toJson()),
+        ProxyProvider<Dio, Repository<Manufacturer, ManufacturerQuery>>(
+          update: (context, d, prev) => ApiRepository<Manufacturer, ManufacturerQuery>(d, '/manufacturers', Manufacturer.fromJson, (m) => m.toJson()),
         ),
-        ProxyProvider<Dio, ApiRepository<Customer>>(
-          update: (context, d, prev) => ApiRepository(d, '/customers', Customer.fromJson, (c) => c.toJson()),
+        ProxyProvider<Dio, Repository<Customer, CustomerQuery>>(
+          update: (context, d, prev) => ApiRepository<Customer, CustomerQuery>(d, '/customers', Customer.fromJson, (c) => c.toJson()),
         ),
 
         // Кэш справочников
-        ProxyProvider<ApiRepository<Manufacturer>, DictionaryCache>(
+        ProxyProvider<Repository<Manufacturer, ManufacturerQuery>, DictionaryCache>(
           update: (context, manRepo, prev) => DictionaryCache(manRepo)..loadOnce(),
         ),
       ],

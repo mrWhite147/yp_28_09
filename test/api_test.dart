@@ -6,17 +6,23 @@ import 'package:mockito/annotations.dart';
 import 'package:yp_2/core/api_exceptions.dart';
 import 'package:yp_2/repositories/api_repository.dart';
 import 'package:yp_2/models/models.dart';
+import 'package:yp_2/models/queries.dart';
 
 @GenerateNiceMocks([MockSpec<Dio>()])
 import 'api_test.mocks.dart'; 
 
 void main() {
   late MockDio mockDio;
-  late ApiRepository<Product> repo;
+  late ApiRepository<Product, ProductQuery> repo; 
 
   setUp(() {
     mockDio = MockDio();
-    repo = ApiRepository(mockDio, '/products', Product.fromJson, (p) => p.toJson());
+    repo = ApiRepository<Product, ProductQuery>(
+      mockDio, 
+      '/products', 
+      Product.fromJson, 
+      (p) => p.toJson()
+    );
   });
 
   test('Успешное получение товара (200 OK)', () async {
@@ -41,7 +47,7 @@ void main() {
   });
 
   test('Разбор ошибки 422 (ValidationException)', () async {
-    final validationError = ValidationException('Ошибка валидации', {'sku': 'SKU занят'});
+    final validationError = ValidationException('Ошибка валидации', const {'sku': 'SKU занят'});
     when(mockDio.post('/products', data: anyNamed('data'))).thenThrow(DioException(
       requestOptions: RequestOptions(path: ''),
       type: DioExceptionType.badResponse,
