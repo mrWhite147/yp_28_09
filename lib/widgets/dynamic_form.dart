@@ -119,7 +119,7 @@ class _DynamicFormState extends State<DynamicForm> {
           decoration: InputDecoration(
             labelText: spec.label, 
             border: const OutlineInputBorder(),
-            errorText: serverError, // 2. ВАЖНО: Рисуем красный текст ошибки!
+            errorText: serverError,
           ),
           keyboardType: spec.type == FieldType.number ? TextInputType.number : TextInputType.text,
           validator: combinedValidator,

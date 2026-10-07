@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+
 import '../models/models.dart';
 import '../models/queries.dart';
 import '../state/list_notifier.dart';
+import '../state/auth_notifier.dart';
 import '../widgets/entity_table.dart';
 import '../widgets/debounced_search.dart';
 import '../widgets/pagination_controls.dart';
@@ -37,7 +39,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
   void _updateUrl(ProductQuery newQuery) => context.go(Uri(path: '/products', queryParameters: newQuery.toMap()).toString());
 
-  void _confirmDelete(BuildContext context, ListNotifier<Product, ProductQuery> notifier) {
+  void _confirmDelete(BuildContext context, ListNotifier<Product, ProductQuery> notifier, AuthNotifier auth) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -49,10 +51,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
             onPressed: () { notifier.deleteSelected(widget.query, hard: false); Navigator.pop(ctx); },
             child: const Text('В корзину'),
           ),
-          TextButton(
-            onPressed: () { notifier.deleteSelected(widget.query, hard: true); Navigator.pop(ctx); },
-            child: const Text('Удалить навсегда', style: TextStyle(color: Colors.red)),
-          ),
+          if (auth.hasRole(Role.admin))
+            TextButton(
+              onPressed: () { notifier.deleteSelected(widget.query, hard: true); Navigator.pop(ctx); },
+              child: const Text('Удалить навсегда', style: TextStyle(color: Colors.red)),
+            ),
         ],
       ),
     );
@@ -61,17 +64,19 @@ class _ProductListScreenState extends State<ProductListScreen> {
   @override
   Widget build(BuildContext context) {
     final notifier = context.watch<ListNotifier<Product, ProductQuery>>();
+    final auth = context.watch<AuthNotifier>();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Товары'), 
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => context.go('/')),
         actions: [
-          FilledButton.icon(
-            icon: const Icon(Icons.add), 
-            label: const Text('Создать'), 
-            onPressed: () => context.push('/products/new'),
-          ),
+          if (auth.hasRole(Role.manager))
+            FilledButton.icon(
+              icon: const Icon(Icons.add), 
+              label: const Text('Создать'), 
+              onPressed: () => context.push('/products/new'),
+            ),
           const SizedBox(width: 16),
         ],
       ),
@@ -90,25 +95,25 @@ class _ProductListScreenState extends State<ProductListScreen> {
             ),
           ),
           
-          if (notifier.hasSelection)
+          if (notifier.hasSelection && auth.hasRole(Role.manager))
             Container(
               color: Colors.blue.shade50, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
                   Text('Выбрано: ${notifier.selected.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
                   const Spacer(),
-                  FilledButton.icon(icon: const Icon(Icons.delete), label: const Text('Удалить'), style: FilledButton.styleFrom(backgroundColor: Colors.red), onPressed: () => _confirmDelete(context, notifier)),
+                  FilledButton.icon(icon: const Icon(Icons.delete), label: const Text('Удалить'), style: FilledButton.styleFrom(backgroundColor: Colors.red), onPressed: () => _confirmDelete(context, notifier, auth)),
                 ],
               ),
             ),
 
-          Expanded(child: _buildBody(notifier)),
+          Expanded(child: _buildBody(notifier, auth)),
         ],
       ),
     );
   }
 
-  Widget _buildBody(ListNotifier<Product, ProductQuery> notifier) {
+  Widget _buildBody(ListNotifier<Product, ProductQuery> notifier, AuthNotifier auth) {
     switch (notifier.status) {
       case LoadStatus.idle:
       case LoadStatus.loading: return const Center(child: CircularProgressIndicator());
@@ -120,7 +125,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
             Expanded(
               child: EntityTable<Product>(
                 items: notifier.result.items, idOf: (p) => p.id, isDeletedOf: (p) => p.isDeleted,
-                selected: notifier.selected, onToggleSelect: notifier.toggleSelection,
+                selected: notifier.selected, 
+                onToggleSelect: auth.hasRole(Role.manager) ? notifier.toggleSelection : null,
                 sortField: widget.query.sortField, sortAscending: widget.query.sortAscending,
                 onSort: (field) => _updateUrl(ProductQuery(sortField: field, sortAscending: field == widget.query.sortField ? !widget.query.sortAscending : true, page: 1, size: widget.query.size)),
                 columns: [
@@ -130,12 +136,13 @@ class _ProductListScreenState extends State<ProductListScreen> {
                   TableColumnSpec(label: 'Остаток', sortField: 'stock', build: (p) => Text('${p.stockCount} шт.')),
                 ],
                 actions: (p) => [
-                  IconButton(
-                    icon: const Icon(Icons.edit), 
-                    onPressed: () => context.push('/products/${p.id}/edit'),
-                    tooltip: 'Редактировать',
-                  ),
-                  if (p.isDeleted) 
+                  if (auth.hasRole(Role.manager))
+                    IconButton(
+                      icon: const Icon(Icons.edit), 
+                      onPressed: () => context.push('/products/${p.id}/edit'),
+                      tooltip: 'Редактировать',
+                    ),
+                  if (p.isDeleted && auth.hasRole(Role.admin)) 
                     IconButton(icon: const Icon(Icons.restore), onPressed: () => notifier.restore(p.id, widget.query), tooltip: 'Восстановить')
                 ],
               ),

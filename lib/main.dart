@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import 'core/api_client.dart';
 import 'repositories/api_repository.dart';
 import 'repositories/repository_interfaces.dart';
 import 'models/models.dart';
 import 'models/queries.dart';
+import 'state/auth_notifier.dart';
+import 'widgets/inactivity_watcher.dart';
 import 'router.dart';
 
-// Кэш справочников
 class DictionaryCache extends ChangeNotifier {
   final Repository<Manufacturer, ManufacturerQuery> manRepo;
   List<Manufacturer> manufacturers = [];
@@ -28,14 +29,24 @@ class DictionaryCache extends ChangeNotifier {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  usePathUrlStrategy(); 
+  usePathUrlStrategy();
 
-  final dio = buildDio();
+  final prefs = await SharedPreferences.getInstance();
+
+  late AuthNotifier authNotifier;
+  final dio = buildDio(getAuth: () => authNotifier);
+  authNotifier = AuthNotifier(prefs, dio);
+
+  await authNotifier.restore();
+
+  final router = buildRouter(authNotifier);
 
   runApp(
     MultiProvider(
       providers: [
-        Provider<Dio>.value(value: dio),        
+        ChangeNotifierProvider<AuthNotifier>.value(value: authNotifier),
+        Provider<Dio>.value(value: dio),
+        
         ProxyProvider<Dio, Repository<Product, ProductQuery>>(
           update: (context, d, prev) => ApiRepository<Product, ProductQuery>(d, '/products', Product.fromJson, (p) => p.toJson()),
         ),
@@ -46,19 +57,19 @@ void main() async {
           update: (context, d, prev) => ApiRepository<Customer, CustomerQuery>(d, '/customers', Customer.fromJson, (c) => c.toJson()),
         ),
 
-        // Кэш справочников
         ChangeNotifierProxyProvider<Repository<Manufacturer, ManufacturerQuery>, DictionaryCache>(
           create: (context) => DictionaryCache(context.read<Repository<Manufacturer, ManufacturerQuery>>()),
           update: (context, manRepo, prev) => (prev ?? DictionaryCache(manRepo))..loadOnce(),
         ),
       ],
-      child: const StoreApp(),
+      child: StoreApp(router: router),
     ),
   );
 }
 
 class StoreApp extends StatelessWidget {
-  const StoreApp({super.key});
+  final RouterConfig<Object> router;
+  const StoreApp({super.key, required this.router});
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +80,18 @@ class StoreApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      routerConfig: appRouter,
+      routerConfig: router,
+      builder: (context, child) {
+        return InactivityWatcher(
+          onLogout: () {
+            context.read<AuthNotifier>().logout();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Сессия завершена из-за неактивности')),
+            );
+          },
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
   }
 }

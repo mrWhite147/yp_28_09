@@ -66,19 +66,14 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       
     } on ValidationException catch (e) {
       setState(() => _serverErrors = e.errors);
-      throw Exception('Validation failed'); 
-    } catch (e, stacktrace) {
+    } on ApiException catch (e) {
       if (mounted) {
-        showDialog(
-          context: context, 
-          builder: (_) => AlertDialog(
-            title: const Text('Критическая системная ошибка'), 
-            content: SingleChildScrollView(child: Text('$e\n\n$stacktrace')),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('ОК'))],
-          )
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
       }
-      throw Exception('System Error');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Произошла системная ошибка'), backgroundColor: Colors.red));
+      }
     }
   }
 
