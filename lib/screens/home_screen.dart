@@ -19,7 +19,7 @@ class HomeScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text(
-                'Привет, ${user?.fullName ?? 'Гость'}!', 
+                'Привет, ${user?.fullName ?? 'Гость'}!',
                 style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -39,20 +39,20 @@ class HomeScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             FilledButton.icon(
-              icon: const Icon(Icons.devices), 
-              label: const Text('Каталог товаров'), 
+              icon: const Icon(Icons.devices),
+              label: const Text('Каталог товаров'),
               onPressed: () => context.go('/products'),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              icon: const Icon(Icons.business), 
-              label: const Text('Производители'), 
+              icon: const Icon(Icons.business),
+              label: const Text('Производители'),
               onPressed: () => context.go('/manufacturers'),
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              icon: const Icon(Icons.people), 
-              label: const Text('Покупатели'), 
+              icon: const Icon(Icons.people),
+              label: const Text('Покупатели'),
               onPressed: () => context.go('/customers'),
             ),
           ],

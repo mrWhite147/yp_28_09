@@ -11,17 +11,33 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
   @override
   Future<PageResult<Product>> find(ProductQuery q) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    
-    var rows = store.products.where((p) => q.includeDeleted || !p.isDeleted).toList();
+
+    var rows = store.products
+        .where((p) => q.includeDeleted || !p.isDeleted)
+        .toList();
 
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
-      rows = rows.where((p) => p.name.toLowerCase().contains(needle) || p.sku.toLowerCase().contains(needle)).toList();
+      rows = rows
+          .where(
+            (p) =>
+                p.name.toLowerCase().contains(needle) ||
+                p.sku.toLowerCase().contains(needle),
+          )
+          .toList();
     }
-    if (q.categoryId != null) rows = rows.where((p) => p.categoryIds.contains(q.categoryId)).toList();
-    if (q.manufacturerId != null) rows = rows.where((p) => p.manufacturerId == q.manufacturerId).toList();
-    if (q.priceFrom != null) rows = rows.where((p) => p.price >= q.priceFrom!).toList();
-    if (q.priceTo != null) rows = rows.where((p) => p.price <= q.priceTo!).toList();
+    if (q.categoryId != null) {
+      rows = rows.where((p) => p.categoryIds.contains(q.categoryId)).toList();
+    }
+    if (q.manufacturerId != null) {
+      rows = rows.where((p) => p.manufacturerId == q.manufacturerId).toList();
+    }
+    if (q.priceFrom != null) {
+      rows = rows.where((p) => p.price >= q.priceFrom!).toList();
+    }
+    if (q.priceTo != null) {
+      rows = rows.where((p) => p.price <= q.priceTo!).toList();
+    }
 
     rows.sort((a, b) {
       final result = switch (q.sortField) {
@@ -43,7 +59,9 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
   @override
   Future<void> restore(int id) async {
     final i = store.products.indexWhere((p) => p.id == id);
-    if (i != -1) store.products[i] = store.products[i].copyWith(clearDeletedAt: true);
+    if (i != -1) {
+      store.products[i] = store.products[i].copyWith(clearDeletedAt: true);
+    }
     await store.saveProducts();
   }
 
@@ -57,7 +75,9 @@ class InMemoryProductRepository implements Repository<Product, ProductQuery> {
       } else {
         final i = store.products.indexWhere((p) => p.id == id && !p.isDeleted);
         if (i != -1) {
-          store.products[i] = store.products[i].copyWith(deletedAt: DateTime.now());
+          store.products[i] = store.products[i].copyWith(
+            deletedAt: DateTime.now(),
+          );
           count++;
         }
       }

@@ -4,22 +4,33 @@ import '../models/queries.dart';
 import 'repository_interfaces.dart';
 import 'persistent_store_repository.dart';
 
-class InMemoryCustomerRepository implements Repository<Customer, CustomerQuery> {
+class InMemoryCustomerRepository
+    implements Repository<Customer, CustomerQuery> {
   final PersistentStore store;
   InMemoryCustomerRepository(this.store);
 
   @override
   Future<PageResult<Customer>> find(CustomerQuery q) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    var rows = store.customers.where((c) => q.includeDeleted || !c.isDeleted).toList();
+    var rows = store.customers
+        .where((c) => q.includeDeleted || !c.isDeleted)
+        .toList();
 
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
-      rows = rows.where((c) => c.fullName.toLowerCase().contains(needle) || c.email.toLowerCase().contains(needle)).toList();
+      rows = rows
+          .where(
+            (c) =>
+                c.fullName.toLowerCase().contains(needle) ||
+                c.email.toLowerCase().contains(needle),
+          )
+          .toList();
     }
 
     rows.sort((a, b) {
-      final result = a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+      final result = a.fullName.toLowerCase().compareTo(
+        b.fullName.toLowerCase(),
+      );
       return q.sortAscending ? result : -result;
     });
 
@@ -34,7 +45,9 @@ class InMemoryCustomerRepository implements Repository<Customer, CustomerQuery> 
   @override
   Future<void> restore(int id) async {
     final i = store.customers.indexWhere((c) => c.id == id);
-    if (i != -1) store.customers[i] = store.customers[i].copyWith(clearDeletedAt: true);
+    if (i != -1) {
+      store.customers[i] = store.customers[i].copyWith(clearDeletedAt: true);
+    }
   }
 
   @override
@@ -45,7 +58,11 @@ class InMemoryCustomerRepository implements Repository<Customer, CustomerQuery> 
         store.customers.removeWhere((c) => c.id == id);
       } else {
         final i = store.customers.indexWhere((c) => c.id == id && !c.isDeleted);
-        if (i != -1) store.customers[i] = store.customers[i].copyWith(deletedAt: DateTime.now());
+        if (i != -1) {
+          store.customers[i] = store.customers[i].copyWith(
+            deletedAt: DateTime.now(),
+          );
+        }
       }
       count++;
     }

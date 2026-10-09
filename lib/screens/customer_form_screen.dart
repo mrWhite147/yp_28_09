@@ -31,7 +31,15 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   Future<void> _loadData() async {
     if (widget.id == null) {
       setState(() {
-        _customer = Customer(id: 0, fullName: '', email: '', card: DiscountCard(number: '', issuedAt: DateTime.now().toIso8601String().split('T')[0]));
+        _customer = Customer(
+          id: 0,
+          fullName: '',
+          email: '',
+          card: DiscountCard(
+            number: '',
+            issuedAt: DateTime.now().toIso8601String().split('T')[0],
+          ),
+        );
         _isLoading = false;
       });
       return;
@@ -46,7 +54,9 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+        );
         context.pop();
       }
     }
@@ -66,7 +76,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
       setState(() => _serverErrors = e.errors);
       rethrow;
     } on ApiException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
       rethrow;
     }
   }
@@ -74,7 +88,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading || _customer == null) {
-      return Scaffold(appBar: AppBar(title: const Text('Загрузка...')), body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Загрузка...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     return Scaffold(
@@ -89,18 +106,36 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               onSave: _save,
               fields: [
                 FormFieldSpec(
-                  name: 'fullName', label: 'ФИО', type: FieldType.text, initialValue: _customer!.fullName,
-                  validator: Validators.required, onSaved: (v) => _customer = _customer!.copyWith(fullName: v),
+                  name: 'fullName',
+                  label: 'ФИО',
+                  type: FieldType.text,
+                  initialValue: _customer!.fullName,
+                  validator: Validators.required,
+                  onSaved: (v) => _customer = _customer!.copyWith(fullName: v),
                 ),
                 FormFieldSpec(
-                  name: 'email', label: 'Email (Уникальный)', type: FieldType.text, initialValue: _customer!.email,
-                  validator: Validators.combine([Validators.required, Validators.email]), 
+                  name: 'email',
+                  label: 'Email (Уникальный)',
+                  type: FieldType.text,
+                  initialValue: _customer!.email,
+                  validator: Validators.combine([
+                    Validators.required,
+                    Validators.email,
+                  ]),
                   onSaved: (v) => _customer = _customer!.copyWith(email: v),
                 ),
                 FormFieldSpec(
-                  name: 'cardNumber', label: 'Номер карты лояльности', type: FieldType.text, initialValue: _customer!.card.number,
-                  validator: Validators.required, 
-                  onSaved: (v) => _customer = _customer!.copyWith(card: DiscountCard(number: v, issuedAt: _customer!.card.issuedAt)),
+                  name: 'cardNumber',
+                  label: 'Номер карты лояльности',
+                  type: FieldType.text,
+                  initialValue: _customer!.card.number,
+                  validator: Validators.required,
+                  onSaved: (v) => _customer = _customer!.copyWith(
+                    card: DiscountCard(
+                      number: v,
+                      issuedAt: _customer!.card.issuedAt,
+                    ),
+                  ),
                 ),
               ],
             ),

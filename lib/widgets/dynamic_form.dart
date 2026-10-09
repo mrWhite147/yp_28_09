@@ -3,19 +3,24 @@ import 'package:flutter/material.dart';
 enum FieldType { text, number, dropdown, multiSelect }
 
 class FormFieldSpec {
-  final String name; 
+  final String name;
   final String label;
   final FieldType type;
   final dynamic initialValue;
-  final List<dynamic>? options; 
+  final List<dynamic>? options;
   final String Function(dynamic)? optionLabelBuilder;
   final String? Function(dynamic)? validator;
   final void Function(dynamic) onSaved;
 
   FormFieldSpec({
-    required this.name, required this.label, required this.type,
-    this.initialValue, this.options, this.optionLabelBuilder,
-    this.validator, required this.onSaved,
+    required this.name,
+    required this.label,
+    required this.type,
+    this.initialValue,
+    this.options,
+    this.optionLabelBuilder,
+    this.validator,
+    required this.onSaved,
   });
 }
 
@@ -24,7 +29,12 @@ class DynamicForm extends StatefulWidget {
   final Future<void> Function() onSave;
   final Map<String, String>? serverErrors;
 
-  const DynamicForm({super.key, required this.fields, required this.onSave, this.serverErrors});
+  const DynamicForm({
+    super.key,
+    required this.fields,
+    required this.onSave,
+    this.serverErrors,
+  });
 
   @override
   State<DynamicForm> createState() => _DynamicFormState();
@@ -42,7 +52,7 @@ class _DynamicFormState extends State<DynamicForm> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     _formKey.currentState!.save();
-    
+
     setState(() => _isSaving = true);
     try {
       await widget.onSave();
@@ -62,10 +72,18 @@ class _DynamicFormState extends State<DynamicForm> {
       context: context,
       builder: (c) => AlertDialog(
         title: const Text('Есть несохраненные изменения'),
-        content: const Text('Вы уверены, что хотите уйти? Все данные будут потеряны.'),
+        content: const Text(
+          'Вы уверены, что хотите уйти? Все данные будут потеряны.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('Остаться')),
-          TextButton(onPressed: () => Navigator.pop(c, true), child: const Text('Уйти', style: TextStyle(color: Colors.red))),
+          TextButton(
+            onPressed: () => Navigator.pop(c, false),
+            child: const Text('Остаться'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(c, true),
+            child: const Text('Уйти', style: TextStyle(color: Colors.red)),
+          ),
         ],
       ),
     );
@@ -87,15 +105,19 @@ class _DynamicFormState extends State<DynamicForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ...widget.fields.map((spec) => Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: _buildField(spec),
-            )),
+            ...widget.fields.map(
+              (spec) => Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: _buildField(spec),
+              ),
+            ),
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _isSaving ? null : _submit,
-              child: _isSaving ? const CircularProgressIndicator(color: Colors.white) : const Text('Сохранить'),
-            )
+              child: _isSaving
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Сохранить'),
+            ),
           ],
         ),
       ),
@@ -117,11 +139,13 @@ class _DynamicFormState extends State<DynamicForm> {
         return TextFormField(
           initialValue: spec.initialValue?.toString(),
           decoration: InputDecoration(
-            labelText: spec.label, 
+            labelText: spec.label,
             border: const OutlineInputBorder(),
             errorText: serverError,
           ),
-          keyboardType: spec.type == FieldType.number ? TextInputType.number : TextInputType.text,
+          keyboardType: spec.type == FieldType.number
+              ? TextInputType.number
+              : TextInputType.text,
           validator: combinedValidator,
           onSaved: spec.onSaved,
           onChanged: (_) => _markDirty(),
@@ -131,14 +155,21 @@ class _DynamicFormState extends State<DynamicForm> {
         return DropdownButtonFormField<dynamic>(
           initialValue: spec.initialValue == 0 ? null : spec.initialValue,
           decoration: InputDecoration(
-            labelText: spec.label, 
+            labelText: spec.label,
             border: const OutlineInputBorder(),
             errorText: serverError,
           ),
-          items: spec.options!.map((o) => DropdownMenuItem(value: o.id, child: Text(spec.optionLabelBuilder!(o)))).toList(),
+          items: spec.options!
+              .map(
+                (o) => DropdownMenuItem(
+                  value: o.id,
+                  child: Text(spec.optionLabelBuilder!(o)),
+                ),
+              )
+              .toList(),
           validator: combinedValidator,
           onSaved: spec.onSaved,
-          onChanged: (_) => _markDirty(), 
+          onChanged: (_) => _markDirty(),
         );
 
       case FieldType.multiSelect:
@@ -149,12 +180,13 @@ class _DynamicFormState extends State<DynamicForm> {
           builder: (field) {
             return InputDecorator(
               decoration: InputDecoration(
-                labelText: spec.label, 
-                border: const OutlineInputBorder(), 
+                labelText: spec.label,
+                border: const OutlineInputBorder(),
                 errorText: field.errorText ?? serverError,
               ),
               child: Wrap(
-                spacing: 8, runSpacing: 8,
+                spacing: 8,
+                runSpacing: 8,
                 children: spec.options!.map((o) {
                   final selected = field.value!.contains(o.id);
                   return FilterChip(
@@ -163,7 +195,7 @@ class _DynamicFormState extends State<DynamicForm> {
                     onSelected: (val) {
                       final next = [...field.value!];
                       val ? next.add(o.id) : next.remove(o.id);
-                      field.didChange(next); 
+                      field.didChange(next);
                       _markDirty();
                     },
                   );

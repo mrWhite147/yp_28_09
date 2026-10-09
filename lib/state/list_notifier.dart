@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../models/page_result.dart';
 import '../repositories/repository_interfaces.dart';
 
@@ -43,11 +44,13 @@ class ListNotifier<T, Q> extends ChangeNotifier {
       _selected.clear();
       await load(currentQuery);
     } catch (e) {
-      String msg = e.toString();      
+      String msg = e.toString();
       if (msg.contains('Instance of')) {
-        try { msg = 'ValidationException: ${(e as dynamic).message}'; } catch (_) {}
+        try {
+          msg = 'ValidationException: ${(e as dynamic).message}';
+        } catch (_) {}
       }
-      
+
       _error = msg;
       _status = LoadStatus.error;
       notifyListeners();

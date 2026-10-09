@@ -3,6 +3,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'core/api_client.dart';
 import 'repositories/api_repository.dart';
 import 'repositories/repository_interfaces.dart';
@@ -46,20 +47,42 @@ void main() async {
       providers: [
         ChangeNotifierProvider<AuthNotifier>.value(value: authNotifier),
         Provider<Dio>.value(value: dio),
-        
+
         ProxyProvider<Dio, Repository<Product, ProductQuery>>(
-          update: (context, d, prev) => ApiRepository<Product, ProductQuery>(d, '/products', Product.fromJson, (p) => p.toJson()),
+          update: (context, d, prev) => ApiRepository<Product, ProductQuery>(
+            d,
+            '/products',
+            Product.fromJson,
+            (p) => p.toJson(),
+          ),
         ),
         ProxyProvider<Dio, Repository<Manufacturer, ManufacturerQuery>>(
-          update: (context, d, prev) => ApiRepository<Manufacturer, ManufacturerQuery>(d, '/manufacturers', Manufacturer.fromJson, (m) => m.toJson()),
+          update: (context, d, prev) =>
+              ApiRepository<Manufacturer, ManufacturerQuery>(
+                d,
+                '/manufacturers',
+                Manufacturer.fromJson,
+                (m) => m.toJson(),
+              ),
         ),
         ProxyProvider<Dio, Repository<Customer, CustomerQuery>>(
-          update: (context, d, prev) => ApiRepository<Customer, CustomerQuery>(d, '/customers', Customer.fromJson, (c) => c.toJson()),
+          update: (context, d, prev) => ApiRepository<Customer, CustomerQuery>(
+            d,
+            '/customers',
+            Customer.fromJson,
+            (c) => c.toJson(),
+          ),
         ),
 
-        ChangeNotifierProxyProvider<Repository<Manufacturer, ManufacturerQuery>, DictionaryCache>(
-          create: (context) => DictionaryCache(context.read<Repository<Manufacturer, ManufacturerQuery>>()),
-          update: (context, manRepo, prev) => (prev ?? DictionaryCache(manRepo))..loadOnce(),
+        ChangeNotifierProxyProvider<
+          Repository<Manufacturer, ManufacturerQuery>,
+          DictionaryCache
+        >(
+          create: (context) => DictionaryCache(
+            context.read<Repository<Manufacturer, ManufacturerQuery>>(),
+          ),
+          update: (context, manRepo, prev) =>
+              (prev ?? DictionaryCache(manRepo))..loadOnce(),
         ),
       ],
       child: StoreApp(router: router),
@@ -86,7 +109,9 @@ class StoreApp extends StatelessWidget {
           onLogout: () {
             context.read<AuthNotifier>().logout();
             ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Сессия завершена из-за неактивности')),
+              const SnackBar(
+                content: Text('Сессия завершена из-за неактивности'),
+              ),
             );
           },
           child: child ?? const SizedBox.shrink(),

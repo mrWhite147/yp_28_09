@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+
 import '../core/api_exceptions.dart';
 import '../models/page_result.dart';
 import '../models/queries.dart';
@@ -20,11 +21,19 @@ class ApiRepository<T, Q extends BaseQuery> implements Repository<T, Q> {
     _cancelToken = CancelToken();
 
     return guard(() async {
-      final res = await _dio.get(path, queryParameters: q.toMap(), cancelToken: _cancelToken);
+      final res = await _dio.get(
+        path,
+        queryParameters: q.toMap(),
+        cancelToken: _cancelToken,
+      );
       final data = res.data as Map<String, dynamic>;
       return PageResult(
-        items: (data['items'] as List).map((e) => fromJson(e as Map<String, dynamic>)).toList(),
-        page: data['page'] ?? 1, size: data['size'] ?? 10, total: data['total'] ?? 0,
+        items: (data['items'] as List)
+            .map((e) => fromJson(e as Map<String, dynamic>))
+            .toList(),
+        page: data['page'] ?? 1,
+        size: data['size'] ?? 10,
+        total: data['total'] ?? 0,
       );
     });
   }

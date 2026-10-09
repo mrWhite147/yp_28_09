@@ -33,14 +33,25 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   Future<void> _loadData() async {
     if (widget.id == null) {
       setState(() {
-        _product = const Product(id: 0, name: '', sku: '', price: 0, stockCount: 0, manufacturerId: 0, categoryIds: [], supplierIds: []);
+        _product = const Product(
+          id: 0,
+          name: '',
+          sku: '',
+          price: 0,
+          stockCount: 0,
+          manufacturerId: 0,
+          categoryIds: [],
+          supplierIds: [],
+        );
         _isLoading = false;
       });
       return;
     }
 
     try {
-      final repo = context.read<Repository<Product, ProductQuery>>() as ApiRepository<Product, ProductQuery>;
+      final repo =
+          context.read<Repository<Product, ProductQuery>>()
+              as ApiRepository<Product, ProductQuery>;
       final p = await repo.findById(widget.id!);
       setState(() {
         _product = p;
@@ -48,31 +59,45 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
       });
     } catch (e) {
       if (mounted) {
-        showDialog(context: context, builder: (_) => AlertDialog(title: const Text('Ошибка загрузки'), content: Text(e.toString())));
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Ошибка загрузки'),
+            content: Text(e.toString()),
+          ),
+        );
       }
     }
   }
 
   Future<void> _save() async {
-    setState(() => _serverErrors = {}); 
+    setState(() => _serverErrors = {});
     try {
-      final repo = context.read<Repository<Product, ProductQuery>>() as ApiRepository<Product, ProductQuery>;
+      final repo =
+          context.read<Repository<Product, ProductQuery>>()
+              as ApiRepository<Product, ProductQuery>;
       if (widget.id == null) {
         await repo.create(_product!);
       } else {
         await repo.update(widget.id!, _product!);
       }
-      if (mounted) context.pop(); 
-      
+      if (mounted) context.pop();
     } on ValidationException catch (e) {
       setState(() => _serverErrors = e.errors);
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Произошла системная ошибка'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Произошла системная ошибка'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -80,13 +105,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading || _product == null) {
-      return Scaffold(appBar: AppBar(title: const Text('Загрузка...')), body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(title: const Text('Загрузка...')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
 
     final cache = context.watch<DictionaryCache>();
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.id == null ? 'Новый товар' : 'Редактирование товара')),
+      appBar: AppBar(
+        title: Text(
+          widget.id == null ? 'Новый товар' : 'Редактирование товара',
+        ),
+      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
@@ -97,30 +129,57 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               onSave: _save,
               fields: [
                 FormFieldSpec(
-                  name: 'name', label: 'Название товара', type: FieldType.text, initialValue: _product!.name,
-                  validator: Validators.required, onSaved: (v) => _product = _product!.copyWith(name: v),
+                  name: 'name',
+                  label: 'Название товара',
+                  type: FieldType.text,
+                  initialValue: _product!.name,
+                  validator: Validators.required,
+                  onSaved: (v) => _product = _product!.copyWith(name: v),
                 ),
                 FormFieldSpec(
-                  name: 'sku', label: 'Артикул (Уникальный)', type: FieldType.text, initialValue: _product!.sku,
-                  validator: Validators.required, onSaved: (v) => _product = _product!.copyWith(sku: v),
+                  name: 'sku',
+                  label: 'Артикул (Уникальный)',
+                  type: FieldType.text,
+                  initialValue: _product!.sku,
+                  validator: Validators.required,
+                  onSaved: (v) => _product = _product!.copyWith(sku: v),
                 ),
                 FormFieldSpec(
-                  name: 'price', label: 'Цена (₽)', type: FieldType.number, initialValue: _product!.price,
-                  validator: Validators.combine([Validators.required, Validators.positiveNumber]), 
-                  onSaved: (v) => _product = _product!.copyWith(price: double.parse(v.replaceAll(',', '.'))),
+                  name: 'price',
+                  label: 'Цена (₽)',
+                  type: FieldType.number,
+                  initialValue: _product!.price,
+                  validator: Validators.combine([
+                    Validators.required,
+                    Validators.positiveNumber,
+                  ]),
+                  onSaved: (v) => _product = _product!.copyWith(
+                    price: double.parse(v.replaceAll(',', '.')),
+                  ),
                 ),
                 FormFieldSpec(
-                  name: 'stockCount', label: 'Остаток на складе (шт.)', type: FieldType.number, initialValue: _product!.stockCount,
-                  validator: Validators.combine([Validators.required, Validators.positiveNumber]), 
-                  onSaved: (v) => _product = _product!.copyWith(stockCount: double.parse(v.replaceAll(',', '.')).toInt()),
+                  name: 'stockCount',
+                  label: 'Остаток на складе (шт.)',
+                  type: FieldType.number,
+                  initialValue: _product!.stockCount,
+                  validator: Validators.combine([
+                    Validators.required,
+                    Validators.positiveNumber,
+                  ]),
+                  onSaved: (v) => _product = _product!.copyWith(
+                    stockCount: double.parse(v.replaceAll(',', '.')).toInt(),
+                  ),
                 ),
                 FormFieldSpec(
-                  name: 'manufacturerId', label: 'Производитель', type: FieldType.dropdown, 
+                  name: 'manufacturerId',
+                  label: 'Производитель',
+                  type: FieldType.dropdown,
                   initialValue: _product!.manufacturerId,
                   options: cache.manufacturers,
                   optionLabelBuilder: (m) => m.name,
                   validator: (v) => v == null ? 'Выберите производителя' : null,
-                  onSaved: (v) => _product = _product!.copyWith(manufacturerId: v),
+                  onSaved: (v) =>
+                      _product = _product!.copyWith(manufacturerId: v),
                 ),
               ],
             ),

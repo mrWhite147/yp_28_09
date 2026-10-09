@@ -4,18 +4,27 @@ import '../models/queries.dart';
 import 'repository_interfaces.dart';
 import 'persistent_store_repository.dart';
 
-class InMemoryManufacturerRepository implements Repository<Manufacturer, ManufacturerQuery> {
+class InMemoryManufacturerRepository
+    implements Repository<Manufacturer, ManufacturerQuery> {
   final PersistentStore store;
   InMemoryManufacturerRepository(this.store);
 
   @override
   Future<PageResult<Manufacturer>> find(ManufacturerQuery q) async {
     await Future.delayed(const Duration(milliseconds: 200));
-    var rows = store.manufacturers.where((m) => q.includeDeleted || !m.isDeleted).toList();
+    var rows = store.manufacturers
+        .where((m) => q.includeDeleted || !m.isDeleted)
+        .toList();
 
     if (q.search.trim().isNotEmpty) {
       final needle = q.search.trim().toLowerCase();
-      rows = rows.where((m) => m.name.toLowerCase().contains(needle) || m.country.toLowerCase().contains(needle)).toList();
+      rows = rows
+          .where(
+            (m) =>
+                m.name.toLowerCase().contains(needle) ||
+                m.country.toLowerCase().contains(needle),
+          )
+          .toList();
     }
 
     rows.sort((a, b) {
@@ -38,24 +47,34 @@ class InMemoryManufacturerRepository implements Repository<Manufacturer, Manufac
   @override
   Future<void> restore(int id) async {
     final i = store.manufacturers.indexWhere((m) => m.id == id);
-    if (i != -1) store.manufacturers[i] = store.manufacturers[i].copyWith(clearDeletedAt: true);    
+    if (i != -1) {
+      store.manufacturers[i] = store.manufacturers[i].copyWith(
+        clearDeletedAt: true,
+      );
+    }
     await store.saveManufacturers();
   }
 
   @override
   Future<int> deleteMany(List<int> ids, {bool hard = false}) async {
     var count = 0;
-    for (final id in ids) {      
-      store.checkManufacturerDeletable(id); 
-      
+    for (final id in ids) {
+      store.checkManufacturerDeletable(id);
+
       if (hard) {
         store.manufacturers.removeWhere((m) => m.id == id);
       } else {
-        final i = store.manufacturers.indexWhere((m) => m.id == id && !m.isDeleted);
-        if (i != -1) store.manufacturers[i] = store.manufacturers[i].copyWith(deletedAt: DateTime.now());
+        final i = store.manufacturers.indexWhere(
+          (m) => m.id == id && !m.isDeleted,
+        );
+        if (i != -1) {
+          store.manufacturers[i] = store.manufacturers[i].copyWith(
+            deletedAt: DateTime.now(),
+          );
+        }
       }
       count++;
-    }    
+    }
     await store.saveManufacturers();
     return count;
   }

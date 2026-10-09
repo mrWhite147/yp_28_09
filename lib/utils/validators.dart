@@ -1,13 +1,15 @@
 class Validators {
   static String? required(dynamic value) {
-    if (value == null || (value is String && value.trim().isEmpty) || (value is List && value.isEmpty)) {
+    if (value == null ||
+        (value is String && value.trim().isEmpty) ||
+        (value is List && value.isEmpty)) {
       return 'Обязательное поле';
     }
     return null;
   }
 
   static String? email(dynamic value) {
-    if (value == null || value.toString().isEmpty) return null; 
+    if (value == null || value.toString().isEmpty) return null;
     final regex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
     if (!regex.hasMatch(value.toString())) return 'Неверный формат email';
     return null;
@@ -21,7 +23,9 @@ class Validators {
     return null;
   }
 
-  static String? Function(T?) combine<T>(List<String? Function(dynamic)> validators) {
+  static String? Function(T?) combine<T>(
+    List<String? Function(dynamic)> validators,
+  ) {
     return (T? value) {
       for (final validator in validators) {
         final error = validator(value);
